@@ -1,8 +1,8 @@
 package com.kanivets.shares.models;
 
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
+import org.hibernate.envers.Audited;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;
@@ -11,21 +11,22 @@ import java.util.Date;
 
 @Data
 @Entity
+@Audited
 @EqualsAndHashCode
+@RequiredArgsConstructor
 @Table(name = "shares")
 public class Share {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", updatable = false, nullable = false)
     private Long id;
 
-
     // текстове поле -  "Коментар"
+    @NotNull
     private String comment;
 
-
     //десяткові поля - "Загальна номінальна вартість"*, "Номінальна вартість", "Сплачене державне мито"
-    @NotNull
     @Positive
     private Long totalFaceValue;
 
@@ -37,35 +38,36 @@ public class Share {
     @Positive
     private Long paidStateDuty;
 
-
     //цілочисельні поля - "Розмір статутного капіталу", "ЄДРПОУ установи", "Кількість"
     @NotNull
     @Positive
-    private Long authorizedCapitalSize;
+    private Long authorizedFundSize;
 
     @NotNull
     @Positive
     private Long codeEDRPOU;
 
-    @NotNull
     @Positive
+    @NotNull
     private Long amount;
-
 
     //дата - "Дата випуску"
     private Date releaseDate;
 
-    public Share(String comment, @NotNull @Positive Long faceValue, @NotNull @Positive Long paidStateDuty,
+    public Share( @NotNull String comment, @NotNull @Positive Long faceValue, @NotNull @Positive Long paidStateDuty,
                  @NotNull @Positive Long authorizedCapitalSize, @NotNull @Positive Long codeEDRPOU,
                  @NotNull @Positive Long amount, Date releaseDate) {
         this.comment = comment;
-        this.totalFaceValue = amount*faceValue;
+        this.totalFaceValue = amount * faceValue;
         this.faceValue = faceValue;
         this.paidStateDuty = paidStateDuty;
-        this.authorizedCapitalSize = authorizedCapitalSize;
+        this.authorizedFundSize = authorizedCapitalSize;
         this.codeEDRPOU = codeEDRPOU;
         this.amount = amount;
         this.releaseDate = releaseDate;
     }
+
+
+
 }
 
