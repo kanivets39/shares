@@ -18,7 +18,7 @@ import java.util.Date;
 public class Share {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", updatable = false, nullable = false)
     private Long id;
 
@@ -52,11 +52,12 @@ public class Share {
     private Long amount;
 
     //дата - "Дата випуску"
+    @NotNull
     private Date releaseDate;
 
     public Share( @NotNull String comment, @NotNull @Positive Long faceValue, @NotNull @Positive Long paidStateDuty,
                  @NotNull @Positive Long authorizedCapitalSize, @NotNull @Positive Long codeEDRPOU,
-                 @NotNull @Positive Long amount, Date releaseDate) {
+                 @NotNull @Positive Long amount,@NotNull Date releaseDate) {
         this.comment = comment;
         this.totalFaceValue = amount * faceValue;
         this.faceValue = faceValue;
