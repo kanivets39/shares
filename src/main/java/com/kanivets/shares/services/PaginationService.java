@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,20 +24,27 @@ public class PaginationService {
         if(pagedResult.hasContent()) {
             return pagedResult.getContent();
         } else {
-            return new ArrayList<Share>();
+            return new ArrayList<>();
         }
     }
 
-    public static List<Share> getAllSharesByEDRPOU(Integer pageNo, Integer pageSize, String sortBy, SharesRepository sharesRepository)
+    public static List getAllSharesWithAudit(Integer pageNo, Integer pageSize, String sortBy, EntityManager entityManager)
+    {
+
+        return AuditService.getHistoryOfAll( pageNo, pageSize, sortBy, entityManager);
+    }
+
+
+    public static List<Share> getAllSharesByEDRPOU(Integer pageNo, Integer pageSize, String sortBy, SharesRepository sharesRepository, Long codeEDRPOU)
     {
         Pageable paging = PageRequest.of(pageNo, pageSize, Sort.by(sortBy));
 
-        Page<Share> pagedResult = sharesRepository.findAll(paging);
+        Page<Share> pagedResult = sharesRepository.findAllByCodeEDRPOU(codeEDRPOU, paging);
 
         if(pagedResult.hasContent()) {
             return pagedResult.getContent();
         } else {
-            return new ArrayList<Share>();
+            return new ArrayList<>();
         }
     }
 

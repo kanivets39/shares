@@ -17,6 +17,7 @@ import java.util.Date;
 @Table(name = "shares")
 public class Share {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", updatable = false, nullable = false)
@@ -32,6 +33,7 @@ public class Share {
 
     @NotNull
     @Positive
+    @Column(name = "face_Value")
     private Long faceValue;
 
     @NotNull
@@ -49,6 +51,7 @@ public class Share {
 
     @Positive
     @NotNull
+    @Column(name = "amount")
     private Long amount;
 
     //дата - "Дата випуску"
@@ -68,6 +71,10 @@ public class Share {
         this.releaseDate = releaseDate;
     }
 
+    @PostLoad
+    private void onLoad() {
+        this.totalFaceValue = faceValue * amount;
+    }
 
 
 }

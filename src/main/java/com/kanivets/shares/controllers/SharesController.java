@@ -1,9 +1,12 @@
 package com.kanivets.shares.controllers;
 
+
 import com.kanivets.shares.dto.PublicShareDTO;
 import com.kanivets.shares.exeptions.NoEntityException;
+import com.kanivets.shares.models.AppUser;
 import com.kanivets.shares.models.Share;
 import com.kanivets.shares.repo.SharesRepository;
+import com.kanivets.shares.repo.UserRepository;
 import com.kanivets.shares.services.AuditService;
 import com.kanivets.shares.services.PaginationService;
 import lombok.extern.slf4j.Slf4j;
@@ -31,16 +34,17 @@ public class SharesController {
     private SharesRepository sharesRepository;
 
     @Autowired
-    ModelMapper modelMapper;
+    private UserRepository userRepository;
 
-
+    @Autowired
+    private ModelMapper modelMapper;
 
     private EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("persistenceUnit");
     @PersistenceContext
     private EntityManager entityManager = entityManagerFactory.createEntityManager();
 
 
-    @PostMapping("/shares")
+    @PostMapping(value = "/shares")
     public ResponseEntity<Share> createOrSaveRequest(@Validated @RequestBody Share newShare) {
 
         sharesRepository.save(newShare);
@@ -48,19 +52,17 @@ public class SharesController {
         return new ResponseEntity<>(newShare, HttpStatus.OK);
     }
 
+//
+//    @PostMapping(value = "/registration")
+//    public ResponseEntity<Share> createOrSaveRequest(@Validated @RequestBody AppUser user) {
+//
+//        userRepository.save(user);
+//        log.info("User was saved");
+//        return new ResponseEntity<>(HttpStatus.OK);
+//    }
 
-    @GetMapping("/shares/public/{id}")
-    public ResponseEntity<PublicShareDTO> getShareById(@PathVariable Long id) throws NoEntityException {
-
-        Share share = sharesRepository.findById(id).orElseThrow(() -> new NoEntityException("share", id));
-        log.info("Share was sent as public access");
-
-        return new ResponseEntity<>(convertToPublicDto(share), HttpStatus.OK);
-
-    }
-
-
-    @PutMapping("/shares/{id}")
+    // @PreFilter("filterObject != authentication.principal.username")
+    @PutMapping(value = "/shares/{id}")
     public ResponseEntity<Share> updateNote(@PathVariable(value = "id") Long id, @Validated @RequestBody Share newShare) throws NoEntityException {
 
         Share share = sharesRepository.findById(id)
@@ -80,28 +82,28 @@ public class SharesController {
         return new ResponseEntity<>(share, HttpStatus.OK);
     }
 
-    @GetMapping("/shares/private/{id}")
+
+    @GetMapping(value = "/shares/public/{id}")
+    public ResponseEntity<PublicShareDTO> getShareById(@PathVariable Long id) throws NoEntityException {
+
+        Share share = sharesRepository.findById(id).orElseThrow(() -> new NoEntityException("share", id));
+        log.info("Share was sent as public access");
+
+        return new ResponseEntity<>(convertToPublicDto(share), HttpStatus.OK);
+    }
+
+    // @PreFilter("filterObject != authentication.principal.username")
+    @GetMapping(value = "/shares/private/{id}")
     public ResponseEntity<List> getShareHistory(@PathVariable Long id) throws NoEntityException {
 
         List sharesList = AuditService.getHistoryById(id, sharesRepository, entityManager);
         log.info("History of chosen share was sent on client");
 
         return new ResponseEntity<>(sharesList, HttpStatus.OK);
-
-    }
-
-    @GetMapping("/shares/private/all")
-    public ResponseEntity<List> getShareAsPrivate() throws NoEntityException {
-
-        List sharesList = AuditService.getHistoryOfAll( entityManager);
-        log.info("History of chosen share was sent on client");
-
-        return new ResponseEntity<>(sharesList, HttpStatus.OK);
-
     }
 
 
-    @DeleteMapping("/shares/{id}")
+    @DeleteMapping(value = "/shares/{id}")
     public ResponseEntity<Share> deleteShare(@PathVariable Long id) throws NoEntityException {
 
         if (sharesRepository.existsById(id)) {
@@ -112,22 +114,23 @@ public class SharesController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/shares/search/private/{codeERDPOU}")
-    public ResponseEntity<List<PublicShareDTO>> getSharesByEDRPOU(@PathVariable Long codeERDPOU) throws NoEntityException {
 
+    //    @PreFilter("filterObject != authentication.principal.username")
+    @GetMapping(value = "/shares/private/all/audit")
+    public ResponseEntity<List> getShareAsPrivate(@RequestParam(defaultValue = "0") Integer pageNo,
+                                                  @RequestParam(defaultValue = "10") Integer pageSize,
+                                                  @RequestParam(defaultValue = "id") String sortBy) {
 
-        List<Share> share = sharesRepository.findAllByCodeEDRPOU(codeERDPOU);
-        log.info("Shares was sent as public access");
+        List sharesList = PaginationService.getAllSharesWithAudit(pageNo, pageSize, sortBy, entityManager);
+        log.info("History of chosen share was sent on client");
 
-        return new ResponseEntity<>(convertToPublicDtos(share), HttpStatus.OK);
-
-
+        return new ResponseEntity<>(sharesList, HttpStatus.OK);
     }
 
-    @GetMapping("/shares/all/public")
+    @GetMapping(value = "/shares/public/all")
     public ResponseEntity<List<PublicShareDTO>> getAllSharesAsPublic(@RequestParam(defaultValue = "0") Integer pageNo,
-                                                            @RequestParam(defaultValue = "10") Integer pageSize,
-                                                            @RequestParam(defaultValue = "id") String sortBy){
+                                                                     @RequestParam(defaultValue = "10") Integer pageSize,
+                                                                     @RequestParam(defaultValue = "id") String sortBy) {
         List<Share> list = PaginationService.getAllShares(pageNo, pageSize, sortBy, sharesRepository);
 
         return new ResponseEntity<>(convertToPublicDtos(list), new HttpHeaders(), HttpStatus.OK);
@@ -135,16 +138,30 @@ public class SharesController {
     }
 
 
-    @GetMapping("/shares/all/private")
-    public ResponseEntity<List<Share>> getAllSharesAsPrivate(@RequestParam(defaultValue = "0") Integer pageNo,
-                                                            @RequestParam(defaultValue = "10") Integer pageSize,
-                                                            @RequestParam(defaultValue = "id") String sortBy){
-        List<Share> list = PaginationService.getAllShares(pageNo, pageSize, sortBy, sharesRepository);
+    @GetMapping(value = "/shares/search/public/{codeERDPOU}")
+    public ResponseEntity<List<PublicShareDTO>> getSharesByEDRPOUasPublic(@PathVariable Long codeERDPOU,
+                                                                          @RequestParam(defaultValue = "0") Integer pageNo,
+                                                                          @RequestParam(defaultValue = "10") Integer pageSize,
+                                                                          @RequestParam(defaultValue = "id") String sortBy) {
 
-        return new ResponseEntity<List<Share>>(list, new HttpHeaders(), HttpStatus.OK);
+        List<Share> share = PaginationService.getAllSharesByEDRPOU(pageNo, pageSize, sortBy, sharesRepository, codeERDPOU);
+        log.info("Shares was sent as public access");
 
+        return new ResponseEntity<>(convertToPublicDtos(share), HttpStatus.OK);
     }
 
+    //    @PreFilter("filterObject != authentication.principal.username")
+    @GetMapping(value = "/shares/search/private/{codeERDPOU}")
+    public ResponseEntity<List<Share>> getSharesByEDRPOUasPrivate(@PathVariable Long codeERDPOU,
+                                                                  @RequestParam(defaultValue = "0") Integer pageNo,
+                                                                  @RequestParam(defaultValue = "10") Integer pageSize,
+                                                                  @RequestParam(defaultValue = "id") String sortBy) {
+
+        List<Share> share = PaginationService.getAllSharesByEDRPOU(pageNo, pageSize, sortBy, sharesRepository, codeERDPOU);
+        log.info("Shares was sent as private access");
+
+        return new ResponseEntity<>(share, HttpStatus.OK);
+    }
 
 
     private PublicShareDTO convertToPublicDto(Share share) {
@@ -154,9 +171,11 @@ public class SharesController {
 
     private List<PublicShareDTO> convertToPublicDtos(List<Share> shares) {
 
-        Type listType = new TypeToken<List<PublicShareDTO>>(){}.getType();
+        Type listType = new TypeToken<List<PublicShareDTO>>() {
+        }.getType();
 
         return modelMapper.map(shares, listType);
     }
+
 
 }

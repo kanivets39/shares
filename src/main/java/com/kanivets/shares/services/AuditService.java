@@ -27,13 +27,16 @@ public class AuditService {
         return readerFactory;
     }
 
-    public static List getHistoryOfAll( EntityManager entityManager) {
+    static List getHistoryOfAll(Integer pageNo, Integer pageSize, String sortBy, EntityManager entityManager) {
         List readerFactory;
-            readerFactory = AuditReaderFactory
-                    .get(entityManager)
-                    .createQuery()
-                    .forRevisionsOfEntity(Share.class, false, true)
-                    .getResultList();
+        readerFactory = AuditReaderFactory
+                .get(entityManager)
+                .createQuery()
+                .forRevisionsOfEntity(Share.class, false, true)
+                .addOrder(AuditEntity.property(sortBy).desc())
+                .setFirstResult(pageNo)
+                .setMaxResults(pageSize)
+                .getResultList();
 
         return readerFactory;
     }

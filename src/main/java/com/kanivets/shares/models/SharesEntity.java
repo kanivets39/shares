@@ -1,5 +1,7 @@
 package com.kanivets.shares.models;
 
+import org.hibernate.annotations.Formula;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.Objects;
@@ -99,12 +101,18 @@ public class SharesEntity {
 
     @Basic
     @Column(name = "total_face_value")
+    @Formula(value = "face_Value*amount")
     public Long getTotalFaceValue() {
         return totalFaceValue;
     }
 
     public void setTotalFaceValue(Long totalFaceValue) {
         this.totalFaceValue = totalFaceValue;
+    }
+
+    @PostLoad
+    private void onLoad() {
+        this.totalFaceValue = faceValue * amount;
     }
 
     @Override
